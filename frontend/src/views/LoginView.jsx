@@ -1,14 +1,16 @@
 import React, { useState } from 'react';
-import { Store, LogIn, Lock, Mail, AlertCircle, Sparkles, ShieldCheck, Eye, EyeOff, Clock, Shield } from 'lucide-react';
+import { Store, LogIn, Lock, Mail, AlertCircle, Sparkles, Eye, EyeOff } from 'lucide-react';
 import { api } from '../api';
 
 export default function LoginView({ onLoginSuccess, onSwitchToSignup }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [rememberDuration, setRememberDuration] = useState('1825d'); // '1825d' | '365d' | '30d' | '7d'
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // Default persistent 5-year session runs seamlessly in background
+  const rememberDuration = '1825d';
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -112,51 +114,6 @@ export default function LoginView({ onLoginSuccess, onSwitchToSignup }) {
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
-            </div>
-
-            {/* Persistent Login Session Duration (Flexible & Secure) */}
-            <div className="pt-1">
-              <div className="flex items-center justify-between mb-1.5">
-                <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-                  <Clock className="w-3.5 h-3.5 text-indigo-500" />
-                  <span>Stay Logged In (Session Duration)</span>
-                </span>
-                <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold uppercase tracking-wider">
-                  Secure Active
-                </span>
-              </div>
-              <div className="grid grid-cols-4 gap-1.5">
-                {[
-                  { id: '1825d', label: '5 Years', sub: 'Max' },
-                  { id: '365d', label: '1 Year', sub: '365d' },
-                  { id: '30d', label: '30 Days', sub: '1 Mo' },
-                  { id: '7d', label: '7 Days', sub: '1 Wk' },
-                ].map((item) => (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onClick={() => setRememberDuration(item.id)}
-                    className={`py-1.5 px-1 rounded-xl text-center transition-all cursor-pointer border text-xs ${
-                      rememberDuration === item.id
-                        ? 'bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-bold border-transparent shadow-xs scale-102'
-                        : 'bg-slate-50 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700/60'
-                    }`}
-                  >
-                    <div>{item.label}</div>
-                    <div className={`text-[9px] ${rememberDuration === item.id ? 'text-violet-200' : 'text-slate-400'}`}>
-                      {item.sub}
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Security Guarantee Notice */}
-            <div className="p-2.5 bg-slate-50/80 dark:bg-slate-800/50 rounded-xl border border-slate-200/80 dark:border-slate-800 text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-2">
-              <Shield className="w-4 h-4 text-emerald-500 shrink-0" />
-              <span>
-                Protected session: Auto-revoked upon password change & protected by brute-force shield.
-              </span>
             </div>
 
             <button
