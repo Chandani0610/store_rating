@@ -1,4 +1,4 @@
-// Centralized API client with automatic token attachment and graceful error handling
+// Centralized API client with automatic token attachment, session persistence, and security handling
 
 const API_BASE = '/api';
 
@@ -15,7 +15,7 @@ const handleResponse = async (res) => {
   try {
     const data = await res.json();
     if (res.status === 401) {
-      // If token expired, clear stale session
+      // If token expired or revoked, clear stale session
       localStorage.removeItem('token');
       localStorage.removeItem('user');
     }
@@ -27,11 +27,11 @@ const handleResponse = async (res) => {
 
 export const api = {
   // Auth
-  async login(email, password) {
+  async login(email, password, rememberDuration = '1825d') {
     const res = await fetch(`${API_BASE}/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ email, password, rememberDuration }),
     });
     return handleResponse(res);
   },
@@ -58,7 +58,12 @@ export const api = {
       headers: getAuthHeaders(),
       body: JSON.stringify({ currentPassword, newPassword }),
     });
-    return handleResponse(res);
+    const data = await handleResponse(res);
+    // If backend provided refreshed token, save it so active session remains uninterrupted
+    if (data.success && data.token) {
+      localStorage.setItem('token', data.token);
+    }
+    return data;
   },
 
   // Admin

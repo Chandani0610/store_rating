@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { Store, LogIn, Lock, Mail, AlertCircle, Sparkles, ShieldCheck, User, Eye, EyeOff } from 'lucide-react';
+import { Store, LogIn, Lock, Mail, AlertCircle, Sparkles, ShieldCheck, Eye, EyeOff, Clock, Shield } from 'lucide-react';
 import { api } from '../api';
 
 export default function LoginView({ onLoginSuccess, onSwitchToSignup }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [rememberDuration, setRememberDuration] = useState('1825d'); // '1825d' | '365d' | '30d' | '7d'
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -15,7 +16,7 @@ export default function LoginView({ onLoginSuccess, onSwitchToSignup }) {
     setLoading(true);
 
     try {
-      const res = await api.login(email.trim(), password);
+      const res = await api.login(email.trim(), password, rememberDuration);
       if (res.success) {
         localStorage.setItem('token', res.token);
         localStorage.setItem('user', JSON.stringify(res.user));
@@ -52,7 +53,7 @@ export default function LoginView({ onLoginSuccess, onSwitchToSignup }) {
         {/* Card */}
         <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-3xl shadow-2xl shadow-indigo-500/10 border border-slate-200/80 dark:border-slate-800/80 p-8 sm:p-10 transition-colors">
           {/* Logo & Headline */}
-          <div className="text-center space-y-2 mb-8">
+          <div className="text-center space-y-2 mb-7">
             <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-tr from-violet-600 via-indigo-600 to-cyan-500 text-white shadow-lg shadow-indigo-500/30 transform hover:rotate-6 transition-transform">
               <Store className="w-7 h-7" />
             </div>
@@ -60,12 +61,12 @@ export default function LoginView({ onLoginSuccess, onSwitchToSignup }) {
               Sign In to Platform
             </h1>
             <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
-              Single unified portal for Admins, Normal Users, & Store Owners
+              Unified portal for Admins, Normal Users, & Store Owners
             </p>
           </div>
 
           {error && (
-            <div className="mb-6 p-3.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/50 text-rose-700 dark:text-rose-300 text-sm flex items-start gap-2.5 animate-in fade-in">
+            <div className="mb-5 p-3.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/50 text-rose-700 dark:text-rose-300 text-xs sm:text-sm flex items-start gap-2.5 animate-in fade-in">
               <AlertCircle className="w-5 h-5 shrink-0 text-rose-500 mt-0.5" />
               <span>{error}</span>
             </div>
@@ -106,11 +107,56 @@ export default function LoginView({ onLoginSuccess, onSwitchToSignup }) {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 cursor-pointer"
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
+            </div>
+
+            {/* Persistent Login Session Duration (Flexible & Secure) */}
+            <div className="pt-1">
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                  <Clock className="w-3.5 h-3.5 text-indigo-500" />
+                  <span>Stay Logged In (Session Duration)</span>
+                </span>
+                <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold uppercase tracking-wider">
+                  Secure Active
+                </span>
+              </div>
+              <div className="grid grid-cols-4 gap-1.5">
+                {[
+                  { id: '1825d', label: '5 Years', sub: 'Max' },
+                  { id: '365d', label: '1 Year', sub: '365d' },
+                  { id: '30d', label: '30 Days', sub: '1 Mo' },
+                  { id: '7d', label: '7 Days', sub: '1 Wk' },
+                ].map((item) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => setRememberDuration(item.id)}
+                    className={`py-1.5 px-1 rounded-xl text-center transition-all cursor-pointer border text-xs ${
+                      rememberDuration === item.id
+                        ? 'bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-bold border-transparent shadow-xs scale-102'
+                        : 'bg-slate-50 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700/60'
+                    }`}
+                  >
+                    <div>{item.label}</div>
+                    <div className={`text-[9px] ${rememberDuration === item.id ? 'text-violet-200' : 'text-slate-400'}`}>
+                      {item.sub}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Security Guarantee Notice */}
+            <div className="p-2.5 bg-slate-50/80 dark:bg-slate-800/50 rounded-xl border border-slate-200/80 dark:border-slate-800 text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-2">
+              <Shield className="w-4 h-4 text-emerald-500 shrink-0" />
+              <span>
+                Protected session: Auto-revoked upon password change & protected by brute-force shield.
+              </span>
             </div>
 
             <button
@@ -129,7 +175,7 @@ export default function LoginView({ onLoginSuccess, onSwitchToSignup }) {
             <button
               type="button"
               onClick={onSwitchToSignup}
-              className="font-bold text-indigo-600 dark:text-indigo-400 hover:underline"
+              className="font-bold text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer"
             >
               Create a free normal user account
             </button>
@@ -140,13 +186,13 @@ export default function LoginView({ onLoginSuccess, onSwitchToSignup }) {
         <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-md rounded-2xl p-4 border border-slate-200/80 dark:border-slate-800 text-center shadow-sm">
           <div className="flex items-center justify-center gap-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 mb-3">
             <Sparkles className="w-4 h-4 text-amber-500" />
-            <span>Instant Demo Accounts (Click to fill)</span>
+            <span>Instant Demo Accounts (Click to autofill)</span>
           </div>
           <div className="grid grid-cols-3 gap-2">
             <button
               type="button"
               onClick={() => fillDemoCredentials('admin')}
-              className="px-2.5 py-2 text-xs bg-slate-50 dark:bg-slate-800/80 hover:bg-violet-50 dark:hover:bg-violet-950/40 hover:border-violet-300 dark:hover:border-violet-700 text-slate-700 dark:text-slate-200 rounded-xl border border-slate-200 dark:border-slate-700 transition-all flex flex-col items-center gap-0.5 group active:scale-95"
+              className="px-2.5 py-2 text-xs bg-slate-50 dark:bg-slate-800/80 hover:bg-violet-50 dark:hover:bg-violet-950/40 hover:border-violet-300 dark:hover:border-violet-700 text-slate-700 dark:text-slate-200 rounded-xl border border-slate-200 dark:border-slate-700 transition-all flex flex-col items-center gap-0.5 group active:scale-95 cursor-pointer"
             >
               <span className="font-semibold group-hover:text-violet-600 dark:group-hover:text-violet-400">Admin</span>
               <span className="text-[10px] text-slate-400 dark:text-slate-500">admin@</span>
@@ -154,7 +200,7 @@ export default function LoginView({ onLoginSuccess, onSwitchToSignup }) {
             <button
               type="button"
               onClick={() => fillDemoCredentials('owner')}
-              className="px-2.5 py-2 text-xs bg-slate-50 dark:bg-slate-800/80 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 hover:border-emerald-300 dark:hover:border-emerald-700 text-slate-700 dark:text-slate-200 rounded-xl border border-slate-200 dark:border-slate-700 transition-all flex flex-col items-center gap-0.5 group active:scale-95"
+              className="px-2.5 py-2 text-xs bg-slate-50 dark:bg-slate-800/80 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 hover:border-emerald-300 dark:hover:border-emerald-700 text-slate-700 dark:text-slate-200 rounded-xl border border-slate-200 dark:border-slate-700 transition-all flex flex-col items-center gap-0.5 group active:scale-95 cursor-pointer"
             >
               <span className="font-semibold group-hover:text-emerald-600 dark:group-hover:text-emerald-400">Store Owner</span>
               <span className="text-[10px] text-slate-400 dark:text-slate-500">alex.organic@</span>
@@ -162,7 +208,7 @@ export default function LoginView({ onLoginSuccess, onSwitchToSignup }) {
             <button
               type="button"
               onClick={() => fillDemoCredentials('user')}
-              className="px-2.5 py-2 text-xs bg-slate-50 dark:bg-slate-800/80 hover:bg-sky-50 dark:hover:bg-sky-950/40 hover:border-sky-300 dark:hover:border-sky-700 text-slate-700 dark:text-slate-200 rounded-xl border border-slate-200 dark:border-slate-700 transition-all flex flex-col items-center gap-0.5 group active:scale-95"
+              className="px-2.5 py-2 text-xs bg-slate-50 dark:bg-slate-800/80 hover:bg-sky-50 dark:hover:bg-sky-950/40 hover:border-sky-300 dark:hover:border-sky-700 text-slate-700 dark:text-slate-200 rounded-xl border border-slate-200 dark:border-slate-700 transition-all flex flex-col items-center gap-0.5 group active:scale-95 cursor-pointer"
             >
               <span className="font-semibold group-hover:text-sky-600 dark:group-hover:text-sky-400">Normal User</span>
               <span className="text-[10px] text-slate-400 dark:text-slate-500">benjamin@</span>

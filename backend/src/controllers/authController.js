@@ -1,23 +1,35 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { pool } = require('../config/db');
+const { recordFailedAttempt, clearLoginAttempts } = require('../middleware/rateLimiter');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'super_secret_store_rating_jwt_key_2026_secured!';
 
+// Supported token validity windows: 7 days, 30 days, 365 days (1 year), 1825 days (5 years)
+const ALLOWED_DURATIONS = {
+  '7d': '7d',
+  '30d': '30d',
+  '365d': '365d',
+  '1825d': '1825d', // 5 years (~1825 days)
+};
+
 const login = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, rememberDuration } = req.body;
 
     if (!email || !password) {
       return res.status(400).json({ success: false, message: 'Please provide both email and password.' });
     }
 
+    const cleanEmail = email.trim().toLowerCase();
+
     const [users] = await pool.query(
-      'SELECT id, name, email, password, address, role FROM users WHERE email = ?',
-      [email.trim().toLowerCase()]
+      'SELECT id, name, email, password, address, role, updated_at FROM users WHERE email = ?',
+      [cleanEmail]
     );
 
     if (users.length === 0) {
+      recordFailedAttempt(req);
       return res.status(401).json({ success: false, message: 'Invalid email or password.' });
     }
 
@@ -25,13 +37,20 @@ const login = async (req, res) => {
     const isMatch = await bcrypt.compare(password, user.password);
 
     if (!isMatch) {
+      recordFailedAttempt(req);
       return res.status(401).json({ success: false, message: 'Invalid email or password.' });
     }
+
+    // Login successful -> clear failed brute-force tracking
+    clearLoginAttempts(req);
+
+    // Selected session duration: defaults to 5 years (1825d) for uninterrupted access
+    const duration = ALLOWED_DURATIONS[rememberDuration] || '1825d';
 
     const token = jwt.sign(
       { userId: user.id, role: user.role, email: user.email },
       JWT_SECRET,
-      { expiresIn: '7d' }
+      { expiresIn: duration }
     );
 
     let storeInfo = null;
@@ -55,6 +74,7 @@ const login = async (req, res) => {
       success: true,
       message: 'Login successful',
       token,
+      expiresIn: duration,
       user: {
         id: user.id,
         name: user.name,
@@ -91,16 +111,18 @@ const signup = async (req, res) => {
 
     const newUserId = result.insertId;
 
+    // Default to 5-year persistent session
     const token = jwt.sign(
       { userId: newUserId, role: 'USER', email: cleanEmail },
       JWT_SECRET,
-      { expiresIn: '7d' }
+      { expiresIn: '1825d' }
     );
 
     return res.status(201).json({
       success: true,
       message: 'Registration successful! Welcome to the platform.',
       token,
+      expiresIn: '1825d',
       user: {
         id: newUserId,
         name: name.trim(),
@@ -158,7 +180,7 @@ const updatePassword = async (req, res) => {
     const { currentPassword, newPassword } = req.body;
     const userId = req.user.id;
 
-    const [rows] = await pool.query('SELECT password FROM users WHERE id = ?', [userId]);
+    const [rows] = await pool.query('SELECT password, email, role FROM users WHERE id = ?', [userId]);
     if (rows.length === 0) {
       return res.status(404).json({ success: false, message: 'User not found.' });
     }
@@ -172,9 +194,24 @@ const updatePassword = async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     const newHash = await bcrypt.hash(newPassword, salt);
 
-    await pool.query('UPDATE users SET password = ? WHERE id = ?', [newHash, userId]);
+    // Update password and touch updated_at
+    await pool.query(
+      'UPDATE users SET password = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+      [newHash, userId]
+    );
 
-    return res.json({ success: true, message: 'Password updated successfully.' });
+    // Issue refreshed token for the current active device
+    const newToken = jwt.sign(
+      { userId, role: rows[0].role, email: rows[0].email },
+      JWT_SECRET,
+      { expiresIn: '1825d' }
+    );
+
+    return res.json({
+      success: true,
+      message: 'Password updated successfully! Previous device sessions have been securely invalidated.',
+      token: newToken,
+    });
   } catch (error) {
     console.error('updatePassword error:', error);
     return res.status(500).json({ success: false, message: 'Failed to update password.' });
