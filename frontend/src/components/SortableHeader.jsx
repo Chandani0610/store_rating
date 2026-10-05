@@ -7,16 +7,16 @@ export default function SortableHeader({ label, field, currentSort, currentOrder
   return (
     <th
       onClick={() => onSort(field)}
-      className="px-5 py-3.5 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider cursor-pointer hover:bg-slate-100/80 transition-colors select-none group"
+      className="px-5 py-3.5 text-left text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider cursor-pointer hover:bg-slate-100/60 dark:hover:bg-slate-800/60 transition-colors select-none group"
     >
       <div className="flex items-center gap-1.5">
-        <span>{label}</span>
-        <span className="text-slate-400 group-hover:text-indigo-600 transition-colors">
+        <span className={isActive ? 'text-indigo-600 dark:text-indigo-400' : ''}>{label}</span>
+        <span className="text-slate-400 dark:text-slate-500 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
           {isActive ? (
             currentOrder === 'asc' ? (
-              <ArrowUp className="w-3.5 h-3.5 text-indigo-600 stroke-[2.5]" />
+              <ArrowUp className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400 stroke-[2.5]" />
             ) : (
-              <ArrowDown className="w-3.5 h-3.5 text-indigo-600 stroke-[2.5]" />
+              <ArrowDown className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400 stroke-[2.5]" />
             )
           ) : (
             <ArrowUpDown className="w-3.5 h-3.5 opacity-40 group-hover:opacity-100" />

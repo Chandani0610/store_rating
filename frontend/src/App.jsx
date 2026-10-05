@@ -16,6 +16,26 @@ export default function App() {
   const [toast, setToast] = useState(null);
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
 
+  // Modern Theme management (Dark / Light)
+  const [theme, setTheme] = useState(() => {
+    const saved = localStorage.getItem('ratesphere-theme');
+    if (saved) return saved;
+    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'dark';
+  });
+
+  useEffect(() => {
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+    localStorage.setItem('ratesphere-theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme(prev => (prev === 'dark' ? 'light' : 'dark'));
+  };
+
   const showToast = (message, type = 'success') => {
     setToast({ message, type });
   };
@@ -51,7 +71,7 @@ export default function App() {
 
   const handleSignupSuccess = (userData) => {
     setUser(userData);
-    showToast(`Welcome to RateSphere, ${userData.name}! Your account has been created.`, 'success');
+    showToast(`Welcome to RateSphere, ${userData.name}! Your account is ready.`, 'success');
   };
 
   const handleLogout = () => {
@@ -64,21 +84,28 @@ export default function App() {
 
   if (initializing) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center text-slate-400 font-medium">
-        <div className="animate-pulse flex items-center gap-2">
-          <div className="w-2.5 h-2.5 bg-indigo-600 rounded-full animate-bounce"></div>
-          <div className="w-2.5 h-2.5 bg-indigo-600 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
-          <div className="w-2.5 h-2.5 bg-indigo-600 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
-          <span className="text-sm text-slate-500 font-sans ml-2">Loading RateSphere...</span>
+      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center text-slate-400 font-medium">
+        <div className="relative flex items-center justify-center mb-4">
+          <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-violet-600 via-indigo-600 to-cyan-400 animate-pulse flex items-center justify-center text-white shadow-xl shadow-indigo-500/20">
+            <span className="text-xl font-bold tracking-widest font-mono">RS</span>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="w-2 h-2 bg-indigo-500 rounded-full animate-bounce"></div>
+          <div className="w-2 h-2 bg-indigo-500 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
+          <div className="w-2 h-2 bg-indigo-500 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+          <span className="text-sm text-slate-400 font-sans ml-2">Loading RateSphere platform...</span>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
+    <div className="min-h-screen flex flex-col font-sans transition-colors duration-200">
       <Navbar
         user={user}
+        theme={theme}
+        onToggleTheme={toggleTheme}
         onLogout={handleLogout}
         onOpenPasswordModal={() => setIsPasswordModalOpen(true)}
       />

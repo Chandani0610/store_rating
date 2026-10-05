@@ -13,8 +13,8 @@ export default function StarRating({
   const starSizes = {
     sm: 'w-4 h-4',
     md: 'w-5 h-5',
-    lg: 'w-7 h-7',
-    xl: 'w-9 h-9',
+    lg: 'w-6 h-6 sm:w-7 sm:h-7',
+    xl: 'w-8 h-8 sm:w-10 sm:h-10',
   };
 
   const currentSize = starSizes[size] || starSizes.md;
@@ -35,20 +35,20 @@ export default function StarRating({
               onClick={() => onChange && onChange(starIndex)}
               onMouseEnter={() => !readOnly && setHoverValue(starIndex)}
               onMouseLeave={() => !readOnly && setHoverValue(0)}
-              className={`transition-transform duration-150 ${
+              className={`transition-all duration-150 ${
                 readOnly
                   ? 'cursor-default'
-                  : 'cursor-pointer hover:scale-115 active:scale-95 focus:outline-none'
+                  : 'cursor-pointer hover:scale-120 active:scale-95 focus:outline-none'
               }`}
               title={readOnly ? `${value} Stars` : `Rate ${starIndex} Stars`}
             >
               <Star
-                className={`${currentSize} ${
+                className={`${currentSize} transition-colors ${
                   isFilled
-                    ? 'fill-amber-400 text-amber-400 drop-shadow-xs'
+                    ? 'fill-amber-400 text-amber-400 drop-shadow-[0_2px_8px_rgba(251,191,36,0.35)]'
                     : isHalf
-                    ? 'fill-amber-200 text-amber-400'
-                    : 'fill-slate-100 text-slate-300'
+                    ? 'fill-amber-200 dark:fill-amber-900/60 text-amber-400'
+                    : 'fill-slate-100 dark:fill-slate-800 text-slate-300 dark:text-slate-700'
                 }`}
               />
             </button>
@@ -57,7 +57,7 @@ export default function StarRating({
       </div>
 
       {showText && (
-        <span className="text-sm font-semibold text-slate-700 ml-1">
+        <span className="text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-300 ml-1">
           {value > 0 ? Number(value).toFixed(1) : 'No ratings'}
         </span>
       )}

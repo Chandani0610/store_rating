@@ -4,6 +4,7 @@ import {
   ShieldCheck, UserCheck, Eye, X, Check, AlertCircle 
 } from 'lucide-react';
 import { api } from '../api';
+import { useDebounce } from '../hooks/useDebounce';
 import SortableHeader from '../components/SortableHeader';
 import StarRating from '../components/StarRating';
 
@@ -19,6 +20,7 @@ export default function AdminDashboardView({ onNotify }) {
   const [stores, setStores] = useState([]);
   const [storesLoading, setStoresLoading] = useState(false);
   const [storesSearch, setStoresSearch] = useState('');
+  const debouncedStoresSearch = useDebounce(storesSearch, 300);
   const [storesSortBy, setStoresSortBy] = useState('name');
   const [storesSortOrder, setStoresSortOrder] = useState('asc');
 
@@ -26,6 +28,7 @@ export default function AdminDashboardView({ onNotify }) {
   const [users, setUsers] = useState([]);
   const [usersLoading, setUsersLoading] = useState(false);
   const [usersSearch, setUsersSearch] = useState('');
+  const debouncedUsersSearch = useDebounce(usersSearch, 300);
   const [usersRoleFilter, setUsersRoleFilter] = useState('ALL');
   const [usersSortBy, setUsersSortBy] = useState('name');
   const [usersSortOrder, setUsersSortOrder] = useState('asc');
@@ -55,7 +58,7 @@ export default function AdminDashboardView({ onNotify }) {
     setStoresLoading(true);
     try {
       const params = {
-        search: storesSearch,
+        search: debouncedStoresSearch,
         sortBy: storesSortBy,
         sortOrder: storesSortOrder,
       };
@@ -75,7 +78,7 @@ export default function AdminDashboardView({ onNotify }) {
     setUsersLoading(true);
     try {
       const params = {
-        search: usersSearch,
+        search: debouncedUsersSearch,
         role: usersRoleFilter,
         sortBy: usersSortBy,
         sortOrder: usersSortOrder,
@@ -98,10 +101,14 @@ export default function AdminDashboardView({ onNotify }) {
   useEffect(() => {
     if (activeTab === 'stores') {
       loadStores();
-    } else {
+    }
+  }, [activeTab, debouncedStoresSearch, storesSortBy, storesSortOrder]);
+
+  useEffect(() => {
+    if (activeTab === 'users') {
       loadUsers();
     }
-  }, [activeTab, storesSearch, storesSortBy, storesSortOrder, usersSearch, usersRoleFilter, usersSortBy, usersSortOrder]);
+  }, [activeTab, debouncedUsersSearch, usersRoleFilter, usersSortBy, usersSortOrder]);
 
   const handleStoresSort = (field) => {
     if (storesSortBy === field) {
@@ -126,11 +133,15 @@ export default function AdminDashboardView({ onNotify }) {
       {/* Top Banner / Title */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-violet-500/10 text-violet-700 dark:text-violet-300 border border-violet-500/20 mb-2">
+            <ShieldCheck className="w-3.5 h-3.5 text-violet-500" />
+            <span>Master Administration Console</span>
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
             System Administrator Dashboard
           </h1>
-          <p className="text-sm text-slate-500">
-            Platform management, stores registry, users administration, and metrics
+          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
+            Real-time platform oversight, stores registry, user governance, and metrics analytics.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -140,127 +151,136 @@ export default function AdminDashboardView({ onNotify }) {
               if (activeTab === 'stores') loadStores();
               else loadUsers();
             }}
-            className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl shadow-2xs transition-all"
-            title="Refresh dashboard data"
+            className="inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 bg-white/80 dark:bg-slate-800/80 hover:bg-slate-100 dark:hover:bg-slate-700/80 border border-slate-200/80 dark:border-slate-700 rounded-xl shadow-xs transition-all cursor-pointer active:scale-95"
+            title="Refresh dashboard metrics"
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${statsLoading ? 'animate-spin text-indigo-600' : ''}`} />
-            <span>Refresh</span>
+            <RefreshCw className={`w-3.5 h-3.5 ${statsLoading ? 'animate-spin text-indigo-600 dark:text-indigo-400' : ''}`} />
+            <span>Refresh Dashboard</span>
           </button>
         </div>
       </div>
 
-      {/* Requirement: Dashboard displaying Total number of users, Total number of stores, Total number of submitted ratings */}
+      {/* Modern 3-Column Analytics KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
         {/* Total Users */}
-        <div className="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-xs hover:shadow-md transition-shadow">
+        <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md rounded-3xl p-6 border border-slate-200/80 dark:border-slate-800 shadow-xs hover:shadow-md transition-all">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
               Total Users
             </span>
-            <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100">
+            <div className="w-10 h-10 rounded-2xl bg-sky-500/10 text-sky-600 dark:text-sky-400 flex items-center justify-center border border-sky-500/20">
               <Users className="w-5 h-5" />
             </div>
           </div>
           <div className="mt-4 flex items-baseline gap-2">
-            <span className="text-3xl font-extrabold text-slate-900">
+            <span className="text-4xl font-black text-slate-900 dark:text-white tracking-tight">
               {stats.totalUsers}
             </span>
-            <span className="text-xs text-slate-500 font-medium">registered</span>
+            <span className="text-xs text-slate-400 font-medium">registered accounts</span>
           </div>
-          <div className="mt-3 flex items-center gap-3 text-[11px] text-slate-500 pt-3 border-t border-slate-100">
-            <span>Users: <strong className="text-slate-700">{stats.rolesBreakdown?.USER || 0}</strong></span>
-            <span>•</span>
-            <span>Owners: <strong className="text-slate-700">{stats.rolesBreakdown?.STORE_OWNER || 0}</strong></span>
-            <span>•</span>
-            <span>Admins: <strong className="text-slate-700">{stats.rolesBreakdown?.ADMIN || 0}</strong></span>
+          <div className="mt-4 flex items-center gap-2 text-[11px] text-slate-500 dark:text-slate-400 pt-3 border-t border-slate-100 dark:border-slate-800 flex-wrap">
+            <span className="px-2 py-0.5 rounded-md bg-sky-500/10 text-sky-700 dark:text-sky-300 font-medium">
+              Users: {stats.rolesBreakdown?.USER || 0}
+            </span>
+            <span className="px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 font-medium">
+              Owners: {stats.rolesBreakdown?.STORE_OWNER || 0}
+            </span>
+            <span className="px-2 py-0.5 rounded-md bg-violet-500/10 text-violet-700 dark:text-violet-300 font-medium">
+              Admins: {stats.rolesBreakdown?.ADMIN || 0}
+            </span>
           </div>
         </div>
 
         {/* Total Stores */}
-        <div className="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-xs hover:shadow-md transition-shadow">
+        <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md rounded-3xl p-6 border border-slate-200/80 dark:border-slate-800 shadow-xs hover:shadow-md transition-all">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
               Total Stores
             </span>
-            <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100">
+            <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center border border-emerald-500/20">
               <Store className="w-5 h-5" />
             </div>
           </div>
           <div className="mt-4 flex items-baseline gap-2">
-            <span className="text-3xl font-extrabold text-slate-900">
+            <span className="text-4xl font-black text-slate-900 dark:text-white tracking-tight">
               {stats.totalStores}
             </span>
-            <span className="text-xs text-slate-500 font-medium">on platform</span>
+            <span className="text-xs text-slate-400 font-medium">registered stores</span>
           </div>
-          <div className="mt-3 text-[11px] text-emerald-700 font-medium pt-3 border-t border-slate-100">
-            All active & eligible for rating
+          <div className="mt-4 text-[11px] text-emerald-600 dark:text-emerald-400 font-medium pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span>All stores active and open for customer ratings</span>
           </div>
         </div>
 
         {/* Total Ratings Submitted */}
-        <div className="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-xs hover:shadow-md transition-shadow">
+        <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md rounded-3xl p-6 border border-slate-200/80 dark:border-slate-800 shadow-xs hover:shadow-md transition-all">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-              Submitted Ratings
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+              Total Feedback Ratings
             </span>
-            <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center border border-amber-100">
-              <Star className="w-5 h-5 fill-amber-400 text-amber-400" />
+            <div className="w-10 h-10 rounded-2xl bg-amber-500/10 text-amber-500 flex items-center justify-center border border-amber-500/20">
+              <Star className="w-5 h-5 fill-amber-400" />
             </div>
           </div>
           <div className="mt-4 flex items-baseline gap-2">
-            <span className="text-3xl font-extrabold text-slate-900">
+            <span className="text-4xl font-black text-slate-900 dark:text-white tracking-tight">
               {stats.totalRatings}
             </span>
-            <span className="text-xs text-slate-500 font-medium">feedbacks recorded</span>
+            <span className="text-xs text-slate-400 font-medium">verified submissions</span>
           </div>
-          <div className="mt-3 text-[11px] text-amber-700 font-medium pt-3 border-t border-slate-100">
-            Ratings strictly range 1 to 5
+          <div className="mt-4 text-[11px] text-amber-600 dark:text-amber-400 font-medium pt-3 border-t border-slate-100 dark:border-slate-800">
+            Ratings strictly adhere to 1-to-5 star scale
           </div>
         </div>
       </div>
 
       {/* Tabs & Controls */}
       <div className="space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between border-b border-slate-200 gap-3">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between border-b border-slate-200/80 dark:border-slate-800 pb-2 gap-3">
           <div className="flex gap-2">
             <button
               type="button"
               onClick={() => setActiveTab('stores')}
-              className={`pb-3 px-3 text-sm font-semibold border-b-2 transition-all flex items-center gap-2 ${
+              className={`pb-2.5 px-4 text-xs sm:text-sm font-bold border-b-2 transition-all flex items-center gap-2 cursor-pointer ${
                 activeTab === 'stores'
-                  ? 'border-indigo-600 text-indigo-600'
-                  : 'border-transparent text-slate-500 hover:text-slate-800'
+                  ? 'border-indigo-600 dark:border-indigo-400 text-indigo-600 dark:text-indigo-400'
+                  : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white'
               }`}
             >
               <Store className="w-4 h-4" />
               <span>Stores Directory</span>
-              <span className="ml-1 px-1.5 py-0.5 text-[10px] rounded-full bg-slate-100 text-slate-600">
+              <span className={`ml-1 px-2 py-0.5 text-[10px] rounded-full font-mono ${
+                activeTab === 'stores' ? 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400' : 'bg-slate-100 dark:bg-slate-800 text-slate-500'
+              }`}>
                 {stores.length}
               </span>
             </button>
             <button
               type="button"
               onClick={() => setActiveTab('users')}
-              className={`pb-3 px-3 text-sm font-semibold border-b-2 transition-all flex items-center gap-2 ${
+              className={`pb-2.5 px-4 text-xs sm:text-sm font-bold border-b-2 transition-all flex items-center gap-2 cursor-pointer ${
                 activeTab === 'users'
-                  ? 'border-indigo-600 text-indigo-600'
-                  : 'border-transparent text-slate-500 hover:text-slate-800'
+                  ? 'border-indigo-600 dark:border-indigo-400 text-indigo-600 dark:text-indigo-400'
+                  : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white'
               }`}
             >
               <Users className="w-4 h-4" />
               <span>Users Management</span>
-              <span className="ml-1 px-1.5 py-0.5 text-[10px] rounded-full bg-slate-100 text-slate-600">
+              <span className={`ml-1 px-2 py-0.5 text-[10px] rounded-full font-mono ${
+                activeTab === 'users' ? 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400' : 'bg-slate-100 dark:bg-slate-800 text-slate-500'
+              }`}>
                 {users.length}
               </span>
             </button>
           </div>
 
-          <div className="pb-2">
+          <div>
             {activeTab === 'stores' ? (
               <button
                 type="button"
                 onClick={() => setIsAddStoreOpen(true)}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-xs shadow-indigo-200 transition-all"
+                className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 rounded-xl shadow-xs transition-all cursor-pointer active:scale-95"
               >
                 <Plus className="w-4 h-4" />
                 <span>Add New Store</span>
@@ -269,7 +289,7 @@ export default function AdminDashboardView({ onNotify }) {
               <button
                 type="button"
                 onClick={() => setIsAddUserOpen(true)}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-xs shadow-indigo-200 transition-all"
+                className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 rounded-xl shadow-xs transition-all cursor-pointer active:scale-95"
               >
                 <Plus className="w-4 h-4" />
                 <span>Add New User</span>
@@ -281,36 +301,33 @@ export default function AdminDashboardView({ onNotify }) {
         {/* ================= STORES TAB CONTENT ================= */}
         {activeTab === 'stores' && (
           <div className="space-y-4">
-            {/* Requirement: Can apply filters on all listings based on Name, Email, Address */}
-            <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex flex-col md:flex-row items-center gap-3">
+            <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md p-3.5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs flex flex-col md:flex-row items-center gap-3">
               <div className="relative flex-1 w-full">
                 <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
                   value={storesSearch}
                   onChange={(e) => setStoresSearch(e.target.value)}
-                  placeholder="Filter stores by Name, Email, or Address..."
-                  className="w-full pl-10 pr-4 py-2 text-xs sm:text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600"
+                  placeholder="Filter stores by Name, Email, or Address (Live debounced)..."
+                  className="w-full pl-10 pr-4 py-2.5 text-xs sm:text-sm bg-slate-50/80 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl focus:bg-white dark:focus:bg-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 transition-all"
                 />
               </div>
               {storesSearch && (
                 <button
                   type="button"
                   onClick={() => setStoresSearch('')}
-                  className="px-3 py-2 text-xs font-medium text-slate-600 hover:text-slate-800 bg-slate-100 rounded-xl whitespace-nowrap"
+                  className="px-3.5 py-2 text-xs font-medium text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white bg-slate-100 dark:bg-slate-800 rounded-xl transition-colors cursor-pointer"
                 >
                   Clear Filters
                 </button>
               )}
             </div>
 
-            {/* Requirement: Can view a list of stores with details: Name, Email, Address, Rating */}
-            {/* Requirement: All tables should support sorting (ascending/descending) for key fields */}
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+            <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs overflow-hidden transition-colors">
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse">
                   <thead>
-                    <tr className="bg-slate-50/80 border-b border-slate-200">
+                    <tr className="bg-slate-50/80 dark:bg-slate-800/60 border-b border-slate-200/80 dark:border-slate-800">
                       <SortableHeader
                         label="Store Name"
                         field="name"
@@ -341,11 +358,12 @@ export default function AdminDashboardView({ onNotify }) {
                       />
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100 text-sm">
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 text-sm">
                     {storesLoading ? (
                       <tr>
                         <td colSpan={4} className="py-12 text-center text-slate-400">
-                          Loading stores...
+                          <RefreshCw className="w-4 h-4 animate-spin text-indigo-600 mx-auto mb-1" />
+                          <span>Loading stores...</span>
                         </td>
                       </tr>
                     ) : stores.length === 0 ? (
@@ -356,25 +374,25 @@ export default function AdminDashboardView({ onNotify }) {
                       </tr>
                     ) : (
                       stores.map((s) => (
-                        <tr key={s.id} className="hover:bg-slate-50/80 transition-colors">
-                          <td className="px-5 py-4 font-semibold text-slate-900">
-                            <div className="flex items-center gap-2">
-                              <div className="w-7 h-7 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0 text-xs font-bold">
+                        <tr key={s.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/40 transition-colors">
+                          <td className="px-5 py-4 font-semibold text-slate-900 dark:text-white">
+                            <div className="flex items-center gap-2.5">
+                              <div className="w-8 h-8 rounded-xl bg-violet-500/10 text-violet-600 dark:text-violet-400 flex items-center justify-center shrink-0 text-xs font-bold border border-violet-500/20">
                                 {s.name.charAt(0)}
                               </div>
                               <span>{s.name}</span>
                             </div>
                           </td>
-                          <td className="px-5 py-4 text-slate-600 font-mono text-xs">
+                          <td className="px-5 py-4 text-slate-600 dark:text-slate-300 font-mono text-xs">
                             {s.email}
                           </td>
-                          <td className="px-5 py-4 text-slate-600 max-w-xs truncate" title={s.address}>
+                          <td className="px-5 py-4 text-slate-600 dark:text-slate-300 max-w-xs truncate" title={s.address}>
                             {s.address}
                           </td>
                           <td className="px-5 py-4 whitespace-nowrap">
                             <div className="flex items-center gap-2">
                               <StarRating value={s.rating} readOnly size="sm" showText />
-                              <span className="text-xs text-slate-400">
+                              <span className="text-xs text-slate-400 font-mono">
                                 ({s.totalRatings} {s.totalRatings === 1 ? 'rating' : 'ratings'})
                               </span>
                             </div>
@@ -392,26 +410,25 @@ export default function AdminDashboardView({ onNotify }) {
         {/* ================= USERS TAB CONTENT ================= */}
         {activeTab === 'users' && (
           <div className="space-y-4">
-            {/* Requirement: Can apply filters on all listings based on Name, Email, Address, and Role */}
-            <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex flex-col md:flex-row items-center gap-3">
+            <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md p-3.5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs flex flex-col md:flex-row items-center gap-3">
               <div className="relative flex-1 w-full">
                 <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
                   value={usersSearch}
                   onChange={(e) => setUsersSearch(e.target.value)}
-                  placeholder="Filter users by Name, Email, or Address..."
-                  className="w-full pl-10 pr-4 py-2 text-xs sm:text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600"
+                  placeholder="Filter users by Name, Email, or Address (Live debounced)..."
+                  className="w-full pl-10 pr-4 py-2.5 text-xs sm:text-sm bg-slate-50/80 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl focus:bg-white dark:focus:bg-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 transition-all"
                 />
               </div>
 
-              {/* Role filter */}
+              {/* Role filter dropdown */}
               <div className="flex items-center gap-2 w-full md:w-auto">
                 <Filter className="w-4 h-4 text-slate-400 shrink-0" />
                 <select
                   value={usersRoleFilter}
                   onChange={(e) => setUsersRoleFilter(e.target.value)}
-                  className="w-full md:w-48 px-3 py-2 text-xs sm:text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600"
+                  className="w-full md:w-48 px-3 py-2 text-xs sm:text-sm bg-slate-50/80 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl focus:bg-white dark:focus:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 cursor-pointer"
                 >
                   <option value="ALL">All Roles</option>
                   <option value="USER">Normal User</option>
@@ -427,21 +444,18 @@ export default function AdminDashboardView({ onNotify }) {
                     setUsersSearch('');
                     setUsersRoleFilter('ALL');
                   }}
-                  className="px-3 py-2 text-xs font-medium text-slate-600 hover:text-slate-800 bg-slate-100 rounded-xl whitespace-nowrap"
+                  className="px-3.5 py-2 text-xs font-medium text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white bg-slate-100 dark:bg-slate-800 rounded-xl transition-colors cursor-pointer"
                 >
                   Clear Filters
                 </button>
               )}
             </div>
 
-            {/* Requirement: Can view a list of normal and admin users with: Name, Email, Address, Role */}
-            {/* Requirement: Can view details of all users, including Name, Email, Address, and Role. If user is a Store Owner, their Rating should also be displayed. */}
-            {/* Requirement: All tables should support sorting (ascending/descending) for key fields */}
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+            <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs overflow-hidden transition-colors">
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse">
                   <thead>
-                    <tr className="bg-slate-50/80 border-b border-slate-200">
+                    <tr className="bg-slate-50/80 dark:bg-slate-800/60 border-b border-slate-200/80 dark:border-slate-800">
                       <SortableHeader
                         label="Name"
                         field="name"
@@ -477,16 +491,17 @@ export default function AdminDashboardView({ onNotify }) {
                         currentOrder={usersSortOrder}
                         onSort={handleUsersSort}
                       />
-                      <th className="px-5 py-3.5 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                      <th className="px-5 py-3.5 text-right text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
                         Details
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100 text-sm">
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 text-sm">
                     {usersLoading ? (
                       <tr>
                         <td colSpan={6} className="py-12 text-center text-slate-400">
-                          Loading users...
+                          <RefreshCw className="w-4 h-4 animate-spin text-indigo-600 mx-auto mb-1" />
+                          <span>Loading users...</span>
                         </td>
                       </tr>
                     ) : users.length === 0 ? (
@@ -497,57 +512,56 @@ export default function AdminDashboardView({ onNotify }) {
                       </tr>
                     ) : (
                       users.map((u) => (
-                        <tr key={u.id} className="hover:bg-slate-50/80 transition-colors">
-                          <td className="px-5 py-4 font-semibold text-slate-900">
+                        <tr key={u.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/40 transition-colors">
+                          <td className="px-5 py-4 font-semibold text-slate-900 dark:text-white">
                             {u.name}
                           </td>
-                          <td className="px-5 py-4 text-slate-600 font-mono text-xs">
+                          <td className="px-5 py-4 text-slate-600 dark:text-slate-300 font-mono text-xs">
                             {u.email}
                           </td>
-                          <td className="px-5 py-4 text-slate-600 max-w-xs truncate" title={u.address}>
+                          <td className="px-5 py-4 text-slate-600 dark:text-slate-300 max-w-xs truncate" title={u.address}>
                             {u.address}
                           </td>
                           <td className="px-5 py-4 whitespace-nowrap">
                             {u.role === 'ADMIN' && (
-                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                                <ShieldCheck className="w-3 h-3" />
+                              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-violet-500/10 text-violet-700 dark:text-violet-300 border border-violet-500/20">
+                                <ShieldCheck className="w-3.5 h-3.5" />
                                 Admin
                               </span>
                             )}
                             {u.role === 'STORE_OWNER' && (
-                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">
-                                <Store className="w-3 h-3" />
+                              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20">
+                                <Store className="w-3.5 h-3.5" />
                                 Store Owner
                               </span>
                             )}
                             {u.role === 'USER' && (
-                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                <UserCheck className="w-3 h-3" />
+                              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-sky-500/10 text-sky-700 dark:text-sky-300 border border-sky-500/20">
+                                <UserCheck className="w-3.5 h-3.5" />
                                 Normal User
                               </span>
                             )}
                           </td>
-                          {/* Requirement: If the user is a Store Owner, their Rating should also be displayed */}
                           <td className="px-5 py-4 whitespace-nowrap">
                             {u.role === 'STORE_OWNER' ? (
                               <div className="flex items-center gap-1.5">
                                 <StarRating value={u.storeRating || 0} readOnly size="sm" showText />
-                                <span className="text-[11px] text-slate-400">
+                                <span className="text-[11px] text-slate-400 font-mono">
                                   ({u.storeRatingCount || 0})
                                 </span>
                               </div>
                             ) : (
-                              <span className="text-slate-300 font-mono text-xs">—</span>
+                              <span className="text-slate-300 dark:text-slate-600 font-mono text-xs">—</span>
                             )}
                           </td>
                           <td className="px-5 py-4 text-right whitespace-nowrap">
                             <button
                               type="button"
                               onClick={() => setSelectedUserDetails(u)}
-                              className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                              className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
                             >
                               <Eye className="w-3.5 h-3.5" />
-                              <span>View</span>
+                              <span>View Details</span>
                             </button>
                           </td>
                         </tr>
@@ -569,7 +583,7 @@ export default function AdminDashboardView({ onNotify }) {
             setIsAddStoreOpen(false);
             loadStores();
             loadStats();
-            onNotify('New store created successfully!', 'success');
+            onNotify('New store registered successfully!', 'success');
           }}
         />
       )}
@@ -582,7 +596,7 @@ export default function AdminDashboardView({ onNotify }) {
             setIsAddUserOpen(false);
             loadUsers();
             loadStats();
-            onNotify('New user created successfully!', 'success');
+            onNotify('New user registered successfully!', 'success');
           }}
         />
       )}
@@ -607,9 +621,6 @@ function AddStoreModal({ onClose, onSuccess }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // Validations per documentation:
-  // Address: Max 400 characters
-  // Email: valid email
   const isAddressValid = address.trim().length > 0 && address.trim().length <= 400;
   const isEmailValid = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email.trim());
   const isNameValid = name.trim().length >= 3 && name.trim().length <= 60;
@@ -645,28 +656,28 @@ function AddStoreModal({ onClose, onSuccess }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
-      <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-lg overflow-hidden">
-        <div className="px-6 py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200/80 dark:border-slate-800 w-full max-w-lg overflow-hidden transition-colors">
+        <div className="px-6 py-4 bg-slate-50/80 dark:bg-slate-800/60 border-b border-slate-200/80 dark:border-slate-800 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Store className="w-5 h-5 text-indigo-600" />
-            <h3 className="font-semibold text-slate-800">Add New Store</h3>
+            <Store className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+            <h3 className="font-bold text-slate-800 dark:text-white">Add New Store</h3>
           </div>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 p-1">
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 cursor-pointer">
             <X className="w-5 h-5" />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           {error && (
-            <div className="p-3 bg-rose-50 text-rose-700 text-xs rounded-lg flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 shrink-0" />
+            <div className="p-3 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/50 text-rose-700 dark:text-rose-300 text-xs rounded-xl flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 shrink-0 text-rose-500" />
               <span>{error}</span>
             </div>
           )}
 
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">
+            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
               Store Name <span className="text-rose-500">*</span>
             </label>
             <input
@@ -675,12 +686,12 @@ function AddStoreModal({ onClose, onSuccess }) {
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g. Apex Organic Market"
-              className="w-full px-3.5 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600"
+              className="w-full px-3.5 py-2.5 text-sm bg-slate-50/80 dark:bg-slate-800/80 border border-slate-300 dark:border-slate-700 rounded-xl focus:bg-white dark:focus:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">
+            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
               Store Email <span className="text-rose-500">*</span>
             </label>
             <input
@@ -689,16 +700,18 @@ function AddStoreModal({ onClose, onSuccess }) {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="contact@storename.com"
-              className="w-full px-3.5 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600"
+              className="w-full px-3.5 py-2.5 text-sm bg-slate-50/80 dark:bg-slate-800/80 border border-slate-300 dark:border-slate-700 rounded-xl focus:bg-white dark:focus:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500"
             />
           </div>
 
           <div>
             <div className="flex justify-between items-center mb-1">
-              <label className="text-xs font-semibold text-slate-700">
+              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
                 Store Address <span className="text-rose-500">*</span>
               </label>
-              <span className="text-[10px] text-slate-400">{address.length}/400</span>
+              <span className={`text-[10px] font-mono ${isAddressValid ? 'text-emerald-500' : 'text-slate-400'}`}>
+                {address.length}/400
+              </span>
             </div>
             <textarea
               required
@@ -706,12 +719,12 @@ function AddStoreModal({ onClose, onSuccess }) {
               value={address}
               onChange={(e) => setAddress(e.target.value)}
               placeholder="Full location address (max 400 chars)"
-              className="w-full px-3.5 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 resize-none"
+              className="w-full px-3.5 py-2.5 text-sm bg-slate-50/80 dark:bg-slate-800/80 border border-slate-300 dark:border-slate-700 rounded-xl focus:bg-white dark:focus:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 resize-none"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">
+            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
               Store Owner Initial Password
             </label>
             <input
@@ -719,25 +732,25 @@ function AddStoreModal({ onClose, onSuccess }) {
               required
               value={ownerPassword}
               onChange={(e) => setOwnerPassword(e.target.value)}
-              className="w-full px-3.5 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 font-mono text-xs"
+              className="w-full px-3.5 py-2.5 text-sm bg-slate-50/80 dark:bg-slate-800/80 border border-slate-300 dark:border-slate-700 rounded-xl focus:bg-white dark:focus:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 font-mono text-xs"
             />
-            <p className="text-[11px] text-slate-500 mt-1">
-              Initial password for the store owner to log in and manage this store.
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
+              Initial password for the store owner to log in and manage their store dashboard.
             </p>
           </div>
 
-          <div className="pt-2 flex justify-end gap-2">
+          <div className="pt-2 flex justify-end gap-2.5">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg"
+              className="px-4 py-2 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl cursor-pointer"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={loading || !isNameValid || !isEmailValid || !isAddressValid}
-              className="px-4 py-2 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg disabled:opacity-50"
+              className="px-5 py-2 text-xs font-semibold text-white bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 rounded-xl shadow-md transition-all cursor-pointer disabled:opacity-50"
             >
               {loading ? 'Creating...' : 'Create Store'}
             </button>
@@ -749,7 +762,6 @@ function AddStoreModal({ onClose, onSuccess }) {
 }
 
 // Modal for Adding User
-// Requirement: Can add new users with details: Name, Email, Password, Address (and Role)
 function AddUserModal({ onClose, onSuccess }) {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -759,17 +771,12 @@ function AddUserModal({ onClose, onSuccess }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // Validations per documentation:
-  // Name: Min 20 characters, Max 60 characters
-  // Address: Max 400 characters
-  // Password: 8-16 characters, at least 1 uppercase and 1 special char
-  // Email: valid email
   const isNameValid = name.trim().length >= 20 && name.trim().length <= 60;
   const isEmailValid = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email.trim());
   const isAddressValid = address.trim().length > 0 && address.trim().length <= 400;
   const isPasswordLengthValid = password.length >= 8 && password.length <= 16;
   const hasUppercase = /[A-Z]/.test(password);
-  const hasSpecial = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?~`]/.test(password);
+  const hasSpecial = /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?~`]/.test(password);
   const isPasswordValid = isPasswordLengthValid && hasUppercase && hasSpecial;
 
   const isFormValid = isNameValid && isEmailValid && isAddressValid && isPasswordValid;
@@ -806,32 +813,32 @@ function AddUserModal({ onClose, onSuccess }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
-      <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-lg overflow-hidden">
-        <div className="px-6 py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200/80 dark:border-slate-800 w-full max-w-lg overflow-hidden transition-colors">
+        <div className="px-6 py-4 bg-slate-50/80 dark:bg-slate-800/60 border-b border-slate-200/80 dark:border-slate-800 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Users className="w-5 h-5 text-indigo-600" />
-            <h3 className="font-semibold text-slate-800">Add New User</h3>
+            <Users className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+            <h3 className="font-bold text-slate-800 dark:text-white">Add New User</h3>
           </div>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 p-1">
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 cursor-pointer">
             <X className="w-5 h-5" />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           {error && (
-            <div className="p-3 bg-rose-50 text-rose-700 text-xs rounded-lg flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 shrink-0" />
+            <div className="p-3 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/50 text-rose-700 dark:text-rose-300 text-xs rounded-xl flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 shrink-0 text-rose-500" />
               <span>{error}</span>
             </div>
           )}
 
           <div>
             <div className="flex justify-between items-center mb-1">
-              <label className="text-xs font-semibold text-slate-700">
+              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
                 Full Name <span className="text-rose-500">*</span>
               </label>
-              <span className={`text-[10px] ${isNameValid ? 'text-emerald-600' : 'text-slate-400'}`}>
+              <span className={`text-[10px] font-mono ${isNameValid ? 'text-emerald-500' : 'text-slate-400'}`}>
                 {name.length}/60 (Min 20)
               </span>
             </div>
@@ -841,12 +848,12 @@ function AddUserModal({ onClose, onSuccess }) {
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g. Christopher James Walker"
-              className="w-full px-3.5 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600"
+              className="w-full px-3.5 py-2.5 text-sm bg-slate-50/80 dark:bg-slate-800/80 border border-slate-300 dark:border-slate-700 rounded-xl focus:bg-white dark:focus:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">
+            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
               Email Address <span className="text-rose-500">*</span>
             </label>
             <input
@@ -855,18 +862,18 @@ function AddUserModal({ onClose, onSuccess }) {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="user@example.com"
-              className="w-full px-3.5 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600"
+              className="w-full px-3.5 py-2.5 text-sm bg-slate-50/80 dark:bg-slate-800/80 border border-slate-300 dark:border-slate-700 rounded-xl focus:bg-white dark:focus:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">
+            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
               Role <span className="text-rose-500">*</span>
             </label>
             <select
               value={role}
               onChange={(e) => setRole(e.target.value)}
-              className="w-full px-3.5 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 bg-white"
+              className="w-full px-3.5 py-2.5 text-sm bg-slate-50/80 dark:bg-slate-800/80 border border-slate-300 dark:border-slate-700 rounded-xl focus:bg-white dark:focus:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 cursor-pointer"
             >
               <option value="USER">Normal User</option>
               <option value="ADMIN">System Administrator</option>
@@ -876,10 +883,12 @@ function AddUserModal({ onClose, onSuccess }) {
 
           <div>
             <div className="flex justify-between items-center mb-1">
-              <label className="text-xs font-semibold text-slate-700">
+              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
                 Address <span className="text-rose-500">*</span>
               </label>
-              <span className="text-[10px] text-slate-400">{address.length}/400</span>
+              <span className={`text-[10px] font-mono ${isAddressValid ? 'text-emerald-500' : 'text-slate-400'}`}>
+                {address.length}/400
+              </span>
             </div>
             <textarea
               required
@@ -887,12 +896,12 @@ function AddUserModal({ onClose, onSuccess }) {
               value={address}
               onChange={(e) => setAddress(e.target.value)}
               placeholder="Full address (max 400 chars)"
-              className="w-full px-3.5 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 resize-none"
+              className="w-full px-3.5 py-2.5 text-sm bg-slate-50/80 dark:bg-slate-800/80 border border-slate-300 dark:border-slate-700 rounded-xl focus:bg-white dark:focus:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 resize-none"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">
+            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
               Password <span className="text-rose-500">*</span>
             </label>
             <input
@@ -901,34 +910,37 @@ function AddUserModal({ onClose, onSuccess }) {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="8-16 chars, 1 uppercase, 1 special char"
-              className="w-full px-3.5 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600"
+              className="w-full px-3.5 py-2.5 text-sm bg-slate-50/80 dark:bg-slate-800/80 border border-slate-300 dark:border-slate-700 rounded-xl focus:bg-white dark:focus:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500"
             />
           </div>
 
-          <div className="p-2.5 bg-slate-50 rounded-lg border border-slate-200 text-[11px] space-y-1">
-            <div className={isNameValid ? 'text-emerald-700' : 'text-slate-500'}>
-              ✓ Name: 20-60 chars
+          <div className="p-3 bg-slate-50/80 dark:bg-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-700/80 text-[11px] space-y-1">
+            <div className={`flex items-center gap-1.5 ${isNameValid ? 'text-emerald-600 dark:text-emerald-400 font-semibold' : 'text-slate-400'}`}>
+              <Check className="w-3 h-3" />
+              <span>Name: 20-60 chars</span>
             </div>
-            <div className={isAddressValid ? 'text-emerald-700' : 'text-slate-500'}>
-              ✓ Address: Up to 400 chars
+            <div className={`flex items-center gap-1.5 ${isAddressValid ? 'text-emerald-600 dark:text-emerald-400 font-semibold' : 'text-slate-400'}`}>
+              <Check className="w-3 h-3" />
+              <span>Address: Up to 400 chars</span>
             </div>
-            <div className={isPasswordValid ? 'text-emerald-700' : 'text-slate-500'}>
-              ✓ Password: 8-16 chars, 1 uppercase, 1 special char
+            <div className={`flex items-center gap-1.5 ${isPasswordValid ? 'text-emerald-600 dark:text-emerald-400 font-semibold' : 'text-slate-400'}`}>
+              <Check className="w-3 h-3" />
+              <span>Password: 8-16 chars, 1 uppercase, 1 special char</span>
             </div>
           </div>
 
-          <div className="pt-2 flex justify-end gap-2">
+          <div className="pt-2 flex justify-end gap-2.5">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg"
+              className="px-4 py-2 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl cursor-pointer"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={loading || !isFormValid}
-              className="px-4 py-2 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg disabled:opacity-50"
+              className="px-5 py-2 text-xs font-semibold text-white bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 rounded-xl shadow-md transition-all cursor-pointer disabled:opacity-50"
             >
               {loading ? 'Creating...' : 'Create User'}
             </button>
@@ -940,60 +952,57 @@ function AddUserModal({ onClose, onSuccess }) {
 }
 
 // Modal for User Details
-// Requirement: Can view details of all users, including Name, Email, Address, and Role.
-// If the user is a Store Owner, their Rating should also be displayed.
 function UserDetailsModal({ user, onClose }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
-      <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-md overflow-hidden">
-        <div className="px-6 py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200/80 dark:border-slate-800 w-full max-w-md overflow-hidden transition-colors">
+        <div className="px-6 py-4 bg-slate-50/80 dark:bg-slate-800/60 border-b border-slate-200/80 dark:border-slate-800 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Users className="w-5 h-5 text-indigo-600" />
-            <h3 className="font-semibold text-slate-800">User Profile Details</h3>
+            <Users className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+            <h3 className="font-bold text-slate-800 dark:text-white">User Profile Details</h3>
           </div>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 p-1">
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 cursor-pointer">
             <X className="w-5 h-5" />
           </button>
         </div>
 
         <div className="p-6 space-y-4">
-          <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-            <span className="text-xs font-semibold text-slate-500 uppercase">Role</span>
-            <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-800">
+          <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Role</span>
+            <span className="text-xs font-bold px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700">
               {user.role}
             </span>
           </div>
 
           <div>
             <label className="text-xs text-slate-400 block mb-0.5">Full Name</label>
-            <div className="text-sm font-semibold text-slate-900">{user.name}</div>
+            <div className="text-sm font-bold text-slate-900 dark:text-white">{user.name}</div>
           </div>
 
           <div>
             <label className="text-xs text-slate-400 block mb-0.5">Email Address</label>
-            <div className="text-sm font-mono text-slate-700">{user.email}</div>
+            <div className="text-sm font-mono text-slate-700 dark:text-slate-300">{user.email}</div>
           </div>
 
           <div>
             <label className="text-xs text-slate-400 block mb-0.5">Address</label>
-            <div className="text-sm text-slate-700 whitespace-pre-wrap">{user.address}</div>
+            <div className="text-sm text-slate-700 dark:text-slate-300 whitespace-pre-wrap">{user.address}</div>
           </div>
 
-          {/* Requirement: If the user is a Store Owner, their Rating should also be displayed */}
           {user.role === 'STORE_OWNER' && (
-            <div className="p-4 bg-emerald-50/70 border border-emerald-200/80 rounded-xl space-y-2 mt-2">
+            <div className="p-4 bg-emerald-50/50 dark:bg-emerald-950/30 border border-emerald-200/80 dark:border-emerald-900/50 rounded-2xl space-y-2 mt-2">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-emerald-900">
+                <span className="text-xs font-bold text-emerald-900 dark:text-emerald-300">
                   Store Owner Rating
                 </span>
-                <span className="text-xs text-emerald-700 font-semibold">
+                <span className="text-xs text-emerald-700 dark:text-emerald-400 font-bold">
                   {user.storeRating ? `${user.storeRating.toFixed(1)} / 5.0` : 'No ratings yet'}
                 </span>
               </div>
               <StarRating value={user.storeRating || 0} readOnly size="md" />
               {user.storeName && (
-                <div className="text-xs text-emerald-800 pt-1">
-                  Store: <strong>{user.storeName}</strong> ({user.storeRatingCount || 0} reviews)
+                <div className="text-xs text-emerald-800 dark:text-emerald-300 pt-1">
+                  Assigned Store: <strong>{user.storeName}</strong> ({user.storeRatingCount || 0} reviews)
                 </div>
               )}
             </div>
@@ -1003,7 +1012,7 @@ function UserDetailsModal({ user, onClose }) {
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-sm font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors"
+              className="px-4 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl transition-colors cursor-pointer"
             >
               Close
             </button>

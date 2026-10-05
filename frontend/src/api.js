@@ -1,4 +1,4 @@
-// Centralized API client
+// Centralized API client with automatic token attachment and graceful error handling
 
 const API_BASE = '/api';
 
@@ -11,6 +11,20 @@ const getAuthHeaders = () => {
   return headers;
 };
 
+const handleResponse = async (res) => {
+  try {
+    const data = await res.json();
+    if (res.status === 401) {
+      // If token expired, clear stale session
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+    }
+    return data;
+  } catch (err) {
+    return { success: false, message: 'Invalid response from server' };
+  }
+};
+
 export const api = {
   // Auth
   async login(email, password) {
@@ -19,7 +33,7 @@ export const api = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password }),
     });
-    return res.json();
+    return handleResponse(res);
   },
 
   async signup(data) {
@@ -28,14 +42,14 @@ export const api = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
     });
-    return res.json();
+    return handleResponse(res);
   },
 
   async getMe() {
     const res = await fetch(`${API_BASE}/auth/me`, {
       headers: getAuthHeaders(),
     });
-    return res.json();
+    return handleResponse(res);
   },
 
   async updatePassword(currentPassword, newPassword) {
@@ -44,7 +58,7 @@ export const api = {
       headers: getAuthHeaders(),
       body: JSON.stringify({ currentPassword, newPassword }),
     });
-    return res.json();
+    return handleResponse(res);
   },
 
   // Admin
@@ -52,7 +66,7 @@ export const api = {
     const res = await fetch(`${API_BASE}/admin/dashboard`, {
       headers: getAuthHeaders(),
     });
-    return res.json();
+    return handleResponse(res);
   },
 
   async getAdminUsers(params = {}) {
@@ -60,14 +74,14 @@ export const api = {
     const res = await fetch(`${API_BASE}/admin/users?${query}`, {
       headers: getAuthHeaders(),
     });
-    return res.json();
+    return handleResponse(res);
   },
 
   async getAdminUserDetails(id) {
     const res = await fetch(`${API_BASE}/admin/users/${id}`, {
       headers: getAuthHeaders(),
     });
-    return res.json();
+    return handleResponse(res);
   },
 
   async addAdminUser(data) {
@@ -76,7 +90,7 @@ export const api = {
       headers: getAuthHeaders(),
       body: JSON.stringify(data),
     });
-    return res.json();
+    return handleResponse(res);
   },
 
   async getAdminStores(params = {}) {
@@ -84,7 +98,7 @@ export const api = {
     const res = await fetch(`${API_BASE}/admin/stores?${query}`, {
       headers: getAuthHeaders(),
     });
-    return res.json();
+    return handleResponse(res);
   },
 
   async addAdminStore(data) {
@@ -93,7 +107,7 @@ export const api = {
       headers: getAuthHeaders(),
       body: JSON.stringify(data),
     });
-    return res.json();
+    return handleResponse(res);
   },
 
   // Stores & Normal User
@@ -102,7 +116,7 @@ export const api = {
     const res = await fetch(`${API_BASE}/stores?${query}`, {
       headers: getAuthHeaders(),
     });
-    return res.json();
+    return handleResponse(res);
   },
 
   async submitRating(storeId, rating) {
@@ -111,7 +125,7 @@ export const api = {
       headers: getAuthHeaders(),
       body: JSON.stringify({ rating }),
     });
-    return res.json();
+    return handleResponse(res);
   },
 
   // Store Owner
@@ -120,6 +134,6 @@ export const api = {
     const res = await fetch(`${API_BASE}/store-owner/dashboard?${query}`, {
       headers: getAuthHeaders(),
     });
-    return res.json();
+    return handleResponse(res);
   },
 };
